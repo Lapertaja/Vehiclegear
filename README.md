@@ -13,6 +13,8 @@ This script allows players to interact with police vehicle trunks to equip and r
   - Reflective vest
   - Helmet (adds armor)
   - Each with animations and progress circles
+  - Restrictions for taking gear so players don't spam full armor
+  - Removing gear is only possible when gear has been equipped from the trunk
 
 - 🔐 **Customizable vehicle access**
   - Only vehicles listed in `allowedVehicles` can be used (client.lua)
@@ -32,4 +34,4 @@ This script allows players to interact with police vehicle trunks to equip and r
 
 - [ox_target](https://overextended.dev/ox_target)
 - [ox_inventory](https://overextended.dev/ox_inventory)
-- [lib](https://overextended.dev/lib)
+- [ox_lib](https://overextended.dev/ox_lib)
