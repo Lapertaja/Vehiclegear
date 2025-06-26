@@ -16,8 +16,11 @@ This script allows players to interact with police vehicle trunks to equip and r
   - Restrictions for taking gear so players don't spam full armor
   - Removing gear is only possible when gear has been equipped from the trunk
 
-- **Customizable vehicle access**
-  - Only vehicles listed in `allowedVehicles` can be used (client.lua)
+- **Customizable access**
+  - Only vehicles listed in `allowedVehicles` can be used
+  - The script has the possibility to job lock the gear
+    - Only authorized jobs listed in `Authorizedjobs` can utilize gear
+    - Also the possibility to disable so that everyone can take gear
 
 - **Gear memory system**
   - Restores original gear when removing the new one
@@ -39,8 +42,6 @@ This script allows players to interact with police vehicle trunks to equip and r
 ---
 
 ## To-do
-- Add support for other notification scripts
 - Add item restriction possibility so that the gear has to be in the trunk to equip
-- Add more locales
 - Add vehicle restriction possibility
   - Only certain vehicles can give certain equipment (Bearcat can give heavier gear, bike only helmet etc.)

@@ -2,18 +2,69 @@ local originalVest = nil
 local originalHelmet = nil
 local hasTakenHelmet = false
 local BProofTaken = false
+local ESX = nil
+local QBCore = nil
+local ped = cache.ped
 
-local allowedVehicles = {
-    [`police`] = true,
-    [`police2`] = true,
-    [`fbi`] = true,
-    [`fbi2`] = true,
-    [`sheriff`] = true,
-    [`sheriff2`] = true
-}
+
+if GetResourceState('es_extended') == 'started' then
+    ESX = exports['es_extended']:getSharedObject()
+    print(ESX and 'ESX loaded' or 'es_extended not found')
+elseif GetResourceState('qb-core') == 'started' then
+    QBCore = exports['qb-core']:GetCoreObject()
+    print(QBCore and 'qb-core loaded' or 'qb-core not found')
+end
+
+local function Notify(title, type)
+    local duration = Config.NotifyDuration * 1000
+    if Config.NotifyType == 'ox' then
+        lib.notify({
+            title = Config.Translation.notifyTitle,
+            description = title,
+            type = type,
+            duration = duration
+        })
+    elseif Config.NotifyType == 'okok' then
+        exports['okokNotify']:Alert(Config.Translation.notifyTitle, title, duration, type)
+    elseif Config.NotifyType == 'esx' then
+        ESX.ShowNotification(title, type, duration, "title here")
+    elseif Config.NotifyType == 'qb' then
+        QBCore.Functions.Notify(title, type, duration)
+    else
+        lib.notify({
+            title = Config.Translation.notifyTitle,
+            description = title,
+            type = type,
+            duration = duration
+        })
+    end
+end
 
 local function isAllowedVehicle(entity)
-    return allowedVehicles[GetEntityModel(entity)] == true
+    return Config.allowedVehicles[GetEntityModel(entity)] == true
+end
+
+local function isCop()
+    if Config.RequireJob then
+        if QBCore then
+            for _,v in pairs(Config.Authorizedjobs) do
+                if QBCore.Functions.GetPlayerData(source).job.name == v then
+                    return true
+                end
+            end
+            return false
+        elseif ESX then
+            for _,v in pairs(Config.Authorizedjobs) do
+                if ESX.PlayerData.job.name == v then
+                    return true
+                end
+            end
+            return false
+        end
+        return false
+    else
+        return true
+    end
 end
 
 local function playProgressBar(label, vehicle)
@@ -58,18 +109,18 @@ end
 local function saveCurrentVest()
     if not originalVest then
         originalVest = {
-            item = GetPedDrawableVariation(cache.ped, 9),
-            texture = GetPedTextureVariation(cache.ped, 9)
+            item = GetPedDrawableVariation(ped, 9),
+            texture = GetPedTextureVariation(ped, 9)
         }
     end
 end
 
 local function saveCurrentHelmet()
-    local currentProp = GetPedPropIndex(cache.ped, 0)
+    local currentProp = GetPedPropIndex(ped, 0)
     if currentProp ~= -1 then
         originalHelmet = {
             prop = currentProp,
-            texture = GetPedPropTextureIndex(cache.ped, 0)
+            texture = GetPedPropTextureIndex(ped, 0)
         }
     else
         originalHelmet = nil
@@ -83,17 +134,17 @@ exports.ox_target:addGlobalVehicle({
         label = Config.Translation.take_armor,
         bones = { 'boot' },
         distance = 1.0,
-        canInteract = isAllowedVehicle,
+        canInteract = isAllowedVehicle and isCop,
         onSelect = function(data)
             if BProofTaken then
-                return lib.notify({ title = Config.Translation.bproof_taken, type = 'error' })
+                return Notify(Config.Translation.bproof_taken, 'error')
             end
 
             if playProgressBar(Config.Translation.putting_armor, data.entity) then
                 saveCurrentVest()
-                SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.BProofAddedArmor, 100))
-                SetPedComponentVariation(cache.ped, 9, Config.BProofNumber, Config.BProofTexture, 1)
-                lib.notify({ title = Config.Translation.took_armor, type = 'inform' })
+                SetPedArmour(ped, math.min(GetPedArmour(ped) + Config.BProofAddedArmor, 100))
+                SetPedComponentVariation(ped, 9, Config.BProofNumber, Config.BProofTexture, 1)
+                Notify(Config.Translation.took_armor, 'inform')
                 BProofTaken = true
             end
         end
@@ -104,12 +155,12 @@ exports.ox_target:addGlobalVehicle({
         label = Config.Translation.take_refvest,
         bones = { 'boot' },
         distance = 1.0,
-        canInteract = isAllowedVehicle,
+        canInteract = isAllowedVehicle and isCop,
         onSelect = function(data)
             if playProgressBar(Config.Translation.putting_vest, data.entity) then
                 saveCurrentVest()
-                SetPedComponentVariation(cache.ped, 9, Config.RefVestNumber, Config.RefVestTexture, 1)
-                lib.notify({ title = Config.Translation.took_vest, type = 'inform' })
+                SetPedComponentVariation(ped, 9, Config.RefVestNumber, Config.RefVestTexture, 1)
+                Notify(Config.Translation.took_vest, 'inform')
             end
         end
     },
@@ -119,18 +170,18 @@ exports.ox_target:addGlobalVehicle({
         label = Config.Translation.take_helmet,
         bones = { 'boot' },
         distance = 1.0,
-        canInteract = isAllowedVehicle,
+        canInteract = isAllowedVehicle and isCop,
         onSelect = function(data)
             if hasTakenHelmet then
-                return lib.notify({ title = Config.Translation.helmet_taken, type = 'error' })
+                return Notify(Config.Translation.helmet_taken, 'error')
             end
 
             if playProgressBar(Config.Translation.putting_helmet, data.entity) then
                 saveCurrentHelmet()
-                ClearPedProp(cache.ped, 0)
-                SetPedPropIndex(cache.ped, 0, Config.HelmetNumber, Config.HelmetTexture, true)
-                SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.HelmetAddedArmor, 100))
-                lib.notify({ title = Config.Translation.took_helmet, type = 'inform' })
+                ClearPedProp(ped, 0)
+                SetPedPropIndex(ped, 0, Config.HelmetNumber, Config.HelmetTexture, true)
+                SetPedArmour(ped, math.min(GetPedArmour(ped) + Config.HelmetAddedArmor, 100))
+                Notify(Config.Translation.took_helmet, 'inform')
                 hasTakenHelmet = true
             end
         end
@@ -147,10 +198,10 @@ exports.ox_target:addGlobalVehicle({
         onSelect = function(data)
             if playProgressBar(Config.Translation.removing_vest, data.entity) then
                 if BProofTaken then
-                    SetPedArmour(cache.ped, math.max(GetPedArmour(cache.ped) - Config.BProofAddedArmor, 0))
+                    SetPedArmour(ped, math.max(GetPedArmour(ped) - Config.BProofAddedArmor, 0))
                 end
-                SetPedComponentVariation(cache.ped, 9, originalVest.item, originalVest.texture, 1)
-                lib.notify({ title = Config.Translation.removed_vest, type = 'inform' })
+                SetPedComponentVariation(ped, 9, originalVest.item, originalVest.texture, 1)
+                Notify(Config.Translation.removed_vest, 'inform')
                 originalVest = nil
                 BProofTaken = false
             end
@@ -167,13 +218,13 @@ exports.ox_target:addGlobalVehicle({
         end,
         onSelect = function(data)
             if playProgressBar(Config.Translation.removing_helmet, data.entity) then
-                SetPedArmour(cache.ped, math.max(GetPedArmour(cache.ped) - Config.HelmetAddedArmor, 0))
-                ClearPedProp(cache.ped, 0)
+                SetPedArmour(ped, math.max(GetPedArmour(ped) - Config.HelmetAddedArmor, 0))
+                ClearPedProp(ped, 0)
                 if originalHelmet then
-                    SetPedPropIndex(cache.ped, 0, originalHelmet.prop, originalHelmet.texture, true)
+                    SetPedPropIndex(ped, 0, originalHelmet.prop, originalHelmet.texture, true)
                     originalHelmet = nil
                 end
-                lib.notify({ title = Config.Translation.removed_helmet, type = 'inform' })
+                Notify(Config.Translation.removed_helmet, 'inform')
                 hasTakenHelmet = false
             end
         end

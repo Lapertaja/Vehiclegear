@@ -4,7 +4,7 @@ lua54 'true'
 
 author 'Lapertaja'
 description 'Take equipment out of a police car trunk'
-version '1.0'
+version '1.1'
 
 client_script 'client.lua'
 

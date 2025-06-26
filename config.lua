@@ -1,7 +1,22 @@
 Config = {}
 
+Config.allowedVehicles = {
+    [`police`] = true,
+    [`police2`] = true,
+    [`fbi`] = true,
+    [`fbi2`] = true,
+    [`sheriff`] = true,
+    [`sheriff2`] = true
+}
+
+Config.NotifyType = 'ox' -- ox, okok, esx, qb
+Config.NotifyDuration = 5 -- seconds
+
+Config.RequireJob = true -- Does the player need to have a certain job to be able to take gear (Only works on esx, qbx and qbcore)
+Config.Authorizedjobs = {'police', 'bcso'} -- Add the job names that you want to be able to use gear
+
 Config.BProofAddedArmor = 50 -- How much bulletproof vest should add armor
-Config.HelmetAddedArmor = 25 -- How much helmet should add armor (Full armor = 100)
+Config.HelmetAddedArmor = 25 -- How much helmet should add armor (Armor caps at 100)
 
 
 Config.BProofNumber = 4 -- Number of the bulletproof vest
@@ -35,5 +50,7 @@ Config.Translation = {
 
     remove_helmet = "Remove helmet",
     removing_helmet = "Taking off helmet...",
-    removed_helmet = "You removed your helmet."
+    removed_helmet = "You removed your helmet.",
+
+    notifyTitle = "Gear system"
 }
