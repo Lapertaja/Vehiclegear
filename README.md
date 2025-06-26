@@ -35,3 +35,10 @@ This script allows players to interact with police vehicle trunks to equip and r
 - [ox_target](https://overextended.dev/ox_target)
 - [ox_inventory](https://overextended.dev/ox_inventory)
 - [ox_lib](https://overextended.dev/ox_lib)
+
+---
+
+## To-do
+- Add support for other notification scripts
+- Add item restriction possibility so that the gear has to be in the trunk to equip
+- Add more locales
