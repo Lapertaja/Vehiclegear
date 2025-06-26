@@ -42,3 +42,5 @@ This script allows players to interact with police vehicle trunks to equip and r
 - Add support for other notification scripts
 - Add item restriction possibility so that the gear has to be in the trunk to equip
 - Add more locales
+- Add vehicle restriction possibility
+  - Only certain vehicles can give certain equipment (Bearcat can give heavier gear, bike only helmet etc.)
