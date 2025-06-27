@@ -29,6 +29,7 @@ This script allows players to interact with police vehicle trunks to equip and r
   - Trunk opens before equipping
   - Equipping starts only after the trunk is open
   - Recognizes if trunk was already open (does not close it)
+  - Player is turned towards the trunk before gear is equipped
   - Progress animations and UI feedback
 
 ---

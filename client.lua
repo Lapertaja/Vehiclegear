@@ -4,15 +4,21 @@ local hasTakenHelmet = false
 local BProofTaken = false
 local ESX = nil
 local QBCore = nil
-local ped = cache.ped
 
-
-if GetResourceState('es_extended') == 'started' then
-    ESX = exports['es_extended']:getSharedObject()
-    print(ESX and 'ESX loaded' or 'es_extended not found')
-elseif GetResourceState('qb-core') == 'started' then
-    QBCore = exports['qb-core']:GetCoreObject()
-    print(QBCore and 'qb-core loaded' or 'qb-core not found')
+if Config.RequireJob then
+    CreateThread(function()
+        while not ESX and not QBCore do
+            Wait(50)
+            print('Searching for core resource')
+            if GetResourceState('es_extended') == 'started' then
+                ESX = exports['es_extended']:getSharedObject()
+                print(ESX and 'ESX loaded' or 'es_extended not found')
+            elseif GetResourceState('qb-core') == 'started' then
+                QBCore = exports['qb-core']:GetCoreObject()
+                print(QBCore and 'qb-core loaded' or 'qb-core not found')
+            end
+        end
+    end)
 end
 
 local function Notify(title, type)
@@ -109,22 +115,37 @@ end
 local function saveCurrentVest()
     if not originalVest then
         originalVest = {
-            item = GetPedDrawableVariation(ped, 9),
-            texture = GetPedTextureVariation(ped, 9)
+            item = GetPedDrawableVariation(cache.ped, 9),
+            texture = GetPedTextureVariation(cache.ped, 9)
         }
     end
 end
 
 local function saveCurrentHelmet()
-    local currentProp = GetPedPropIndex(ped, 0)
+    local currentProp = GetPedPropIndex(cache.ped, 0)
     if currentProp ~= -1 then
         originalHelmet = {
             prop = currentProp,
-            texture = GetPedPropTextureIndex(ped, 0)
+            texture = GetPedPropTextureIndex(cache.ped, 0)
         }
     else
         originalHelmet = nil
     end
+end
+
+function isLookingAtVehicle(ped, vehicle, maxAngle)
+    local pedCoords = GetEntityCoords(ped)
+    local vehicleCoords = GetEntityCoords(vehicle)
+    local toVehicle = vector3(vehicleCoords.x - pedCoords.x, vehicleCoords.y - pedCoords.y, vehicleCoords.z - pedCoords.z)
+
+    local forward = GetEntityForwardVector(ped)
+
+    toVehicle = toVehicle / #(toVehicle)
+
+    local dot = forward.x * toVehicle.x + forward.y * toVehicle.y + forward.z * toVehicle.z
+    local angle = math.deg(math.acos(dot))
+
+    return angle < (maxAngle or 30.0)
 end
 
 exports.ox_target:addGlobalVehicle({
@@ -140,10 +161,17 @@ exports.ox_target:addGlobalVehicle({
                 return Notify(Config.Translation.bproof_taken, 'error')
             end
 
+            TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+            while not isLookingAtVehicle(cache.ped, data.entity) do
+               Wait(50)
+            end
+            Wait(100)
+
             if playProgressBar(Config.Translation.putting_armor, data.entity) then
                 saveCurrentVest()
-                SetPedArmour(ped, math.min(GetPedArmour(ped) + Config.BProofAddedArmor, 100))
-                SetPedComponentVariation(ped, 9, Config.BProofNumber, Config.BProofTexture, 1)
+                SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.BProofAddedArmor, 100))
+                SetPedComponentVariation(cache.ped, 9, Config.BProofNumber, Config.BProofTexture, 1)
                 Notify(Config.Translation.took_armor, 'inform')
                 BProofTaken = true
             end
@@ -157,9 +185,16 @@ exports.ox_target:addGlobalVehicle({
         distance = 1.0,
         canInteract = isAllowedVehicle and isCop,
         onSelect = function(data)
+            TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+            while not isLookingAtVehicle(cache.ped, data.entity) do
+               Wait(50)
+            end
+            Wait(100)
+
             if playProgressBar(Config.Translation.putting_vest, data.entity) then
                 saveCurrentVest()
-                SetPedComponentVariation(ped, 9, Config.RefVestNumber, Config.RefVestTexture, 1)
+                SetPedComponentVariation(cache.ped, 9, Config.RefVestNumber, Config.RefVestTexture, 1)
                 Notify(Config.Translation.took_vest, 'inform')
             end
         end
@@ -176,11 +211,18 @@ exports.ox_target:addGlobalVehicle({
                 return Notify(Config.Translation.helmet_taken, 'error')
             end
 
+            TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+            while not isLookingAtVehicle(cache.ped, data.entity) do
+               Wait(50)
+            end
+            Wait(100)
+
             if playProgressBar(Config.Translation.putting_helmet, data.entity) then
                 saveCurrentHelmet()
-                ClearPedProp(ped, 0)
-                SetPedPropIndex(ped, 0, Config.HelmetNumber, Config.HelmetTexture, true)
-                SetPedArmour(ped, math.min(GetPedArmour(ped) + Config.HelmetAddedArmor, 100))
+                ClearPedProp(cache.ped, 0)
+                SetPedPropIndex(cache.ped, 0, Config.HelmetNumber, Config.HelmetTexture, true)
+                SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.HelmetAddedArmor, 100))
                 Notify(Config.Translation.took_helmet, 'inform')
                 hasTakenHelmet = true
             end
@@ -196,11 +238,18 @@ exports.ox_target:addGlobalVehicle({
             return isAllowedVehicle(entity) and originalVest ~= nil
         end,
         onSelect = function(data)
+            TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+            while not isLookingAtVehicle(cache.ped, data.entity) do
+               Wait(50)
+            end
+            Wait(100)
+
             if playProgressBar(Config.Translation.removing_vest, data.entity) then
                 if BProofTaken then
-                    SetPedArmour(ped, math.max(GetPedArmour(ped) - Config.BProofAddedArmor, 0))
+                    SetPedArmour(cache.ped, math.max(GetPedArmour(cache.ped) - Config.BProofAddedArmor, 0))
                 end
-                SetPedComponentVariation(ped, 9, originalVest.item, originalVest.texture, 1)
+                SetPedComponentVariation(cache.ped, 9, originalVest.item, originalVest.texture, 1)
                 Notify(Config.Translation.removed_vest, 'inform')
                 originalVest = nil
                 BProofTaken = false
@@ -217,11 +266,18 @@ exports.ox_target:addGlobalVehicle({
             return isAllowedVehicle(entity) and hasTakenHelmet
         end,
         onSelect = function(data)
+            TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+            while not isLookingAtVehicle(cache.ped, data.entity) do
+               Wait(50)
+            end
+            Wait(100)
+
             if playProgressBar(Config.Translation.removing_helmet, data.entity) then
-                SetPedArmour(ped, math.max(GetPedArmour(ped) - Config.HelmetAddedArmor, 0))
-                ClearPedProp(ped, 0)
+                SetPedArmour(cache.ped, math.max(GetPedArmour(cache.ped) - Config.HelmetAddedArmor, 0))
+                ClearPedProp(cache.ped, 0)
                 if originalHelmet then
-                    SetPedPropIndex(ped, 0, originalHelmet.prop, originalHelmet.texture, true)
+                    SetPedPropIndex(cache.ped, 0, originalHelmet.prop, originalHelmet.texture, true)
                     originalHelmet = nil
                 end
                 Notify(Config.Translation.removed_helmet, 'inform')
