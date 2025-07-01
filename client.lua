@@ -21,25 +21,31 @@ if Config.RequireJob then
     end)
 end
 
-local function Notify(title, type)
+local function Notify(desc, type)
     local duration = Config.NotifyDuration * 1000
     if Config.NotifyType == 'ox' then
         lib.notify({
             title = Config.Translation.notifyTitle,
-            description = title,
+            description = desc,
             type = type,
             duration = duration
         })
     elseif Config.NotifyType == 'okok' then
-        exports['okokNotify']:Alert(Config.Translation.notifyTitle, title, duration, type)
+        if GetResourceState('okokNotify') == 'started' then
+            exports['okokNotify']:Alert(Config.Translation.notifyTitle, desc, duration, type)
+        else
+            print("[VehicleGear] okokNotify does not exist or is named wrong (Needs to be okokNotify!) Change Config.NotifyType or rename okokNotify")
+        end
     elseif Config.NotifyType == 'esx' then
-        ESX.ShowNotification(title, type, duration, "title here")
+        ESX.ShowNotification(desc, type, duration, Config.Translation.notifyTitle)
     elseif Config.NotifyType == 'qb' then
-        QBCore.Functions.Notify(title, type, duration)
+        QBCore.Functions.Notify(desc, type, duration)
+    elseif Config.NotifyType == 'custom' then
+        -- Put your own notify script here and edit config.NotifyType to custom
     else
         lib.notify({
             title = Config.Translation.notifyTitle,
-            description = title,
+            description = desc,
             type = type,
             duration = duration
         })
@@ -51,26 +57,18 @@ local function isAllowedVehicle(entity)
 end
 
 local function isCop()
-    if Config.RequireJob then
-        if QBCore then
-            for _,v in pairs(Config.Authorizedjobs) do
-                if QBCore.Functions.GetPlayerData(source).job.name == v then
-                    return true
-                end
-            end
-            return false
-        elseif ESX then
-            for _,v in pairs(Config.Authorizedjobs) do
-                if ESX.PlayerData.job.name == v then
-                    return true
-                end
-            end
-            return false
+    if QBCore then
+        for _,v in pairs(Config.Authorizedjobs) do
+            return QBCore.Functions.GetPlayerData().job.name == v
         end
         return false
-    else
-        return true
+    elseif ESX then
+        for _,v in pairs(Config.Authorizedjobs) do
+            return ESX.PlayerData.job.name == v
+        end
+        return false
     end
+    return false
 end
 
 local function playProgressBar(label, vehicle)
@@ -133,7 +131,7 @@ local function saveCurrentHelmet()
     end
 end
 
-function isLookingAtVehicle(ped, vehicle, maxAngle)
+local function isLookingAtVehicle(ped, vehicle, maxAngle)
     local pedCoords = GetEntityCoords(ped)
     local vehicleCoords = GetEntityCoords(vehicle)
     local toVehicle = vector3(vehicleCoords.x - pedCoords.x, vehicleCoords.y - pedCoords.y, vehicleCoords.z - pedCoords.z)
@@ -155,7 +153,16 @@ exports.ox_target:addGlobalVehicle({
         label = Config.Translation.take_armor,
         bones = { 'boot' },
         distance = 1.0,
-        canInteract = isAllowedVehicle and isCop,
+        canInteract = function(entity)
+            local allowed = isAllowedVehicle(entity) and Config.BProofNumber ~= nil
+            if Config.RequireJob then
+                allowed = allowed and isCop()
+            end
+            if Config.RequireUnlocked then
+                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            return allowed
+        end,
         onSelect = function(data)
             if BProofTaken then
                 return Notify(Config.Translation.bproof_taken, 'error')
@@ -178,12 +185,58 @@ exports.ox_target:addGlobalVehicle({
         end
     },
     {
+        name = 'trunk_take_heavy_armor',
+        icon = 'fa-solid fa-shield-halved',
+        label = Config.Translation.take_heavy,
+        bones = { 'boot' },
+        distance = 1.0,
+        canInteract = function(entity)
+            local allowed = isAllowedVehicle(entity) and Config.HeavyVestNumber ~= nil
+            if Config.RequireJob then
+                allowed = allowed and isCop()
+            end
+            if Config.RequireUnlocked then
+                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            return allowed
+        end,
+        onSelect = function(data)
+            if BProofTaken then
+                return Notify(Config.Translation.bproof_taken, 'error')
+            end
+
+            TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+            while not isLookingAtVehicle(cache.ped, data.entity) do
+               Wait(50)
+            end
+            Wait(100)
+
+            if playProgressBar(Config.Translation.putting_heavy, data.entity) then
+                saveCurrentVest()
+                SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.HVestAddedArmor, 100))
+                SetPedComponentVariation(cache.ped, 9, Config.HeavyVestNumber, Config.HeavyVestTexture, 1)
+                Notify(Config.Translation.took_heavy, 'inform')
+                BProofTaken = true
+            end
+        end
+    },
+    {
         name = 'trunk_take_vest',
         icon = 'fa-solid fa-vest',
         label = Config.Translation.take_refvest,
         bones = { 'boot' },
         distance = 1.0,
-        canInteract = isAllowedVehicle and isCop,
+        canInteract = function(entity)
+            local allowed = isAllowedVehicle(entity) and Config.RefVestNumber ~= nil
+            if Config.RequireJob then
+                allowed = allowed and isCop()
+            end
+            if Config.RequireUnlocked then
+                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            return allowed
+        end,
         onSelect = function(data)
             TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
 
@@ -205,7 +258,16 @@ exports.ox_target:addGlobalVehicle({
         label = Config.Translation.take_helmet,
         bones = { 'boot' },
         distance = 1.0,
-        canInteract = isAllowedVehicle and isCop,
+        canInteract = function(entity)
+            local allowed = isAllowedVehicle(entity) and Config.HelmetNumber ~= nil
+            if Config.RequireJob then
+                allowed = allowed and isCop()
+            end
+            if Config.RequireUnlocked then
+                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            return allowed
+        end,
         onSelect = function(data)
             if hasTakenHelmet then
                 return Notify(Config.Translation.helmet_taken, 'error')

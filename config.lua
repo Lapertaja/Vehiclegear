@@ -9,23 +9,28 @@ Config.allowedVehicles = {
     [`sheriff2`] = true
 }
 
-Config.NotifyType = 'ox' -- ox, okok, esx, qb
+Config.NotifyType = 'ox' -- ox, okok, esx, qb, custom (set in client.lua)
 Config.NotifyDuration = 5 -- seconds
 
 Config.RequireJob = true -- Does the player need to have a certain job to be able to take gear (Only works on esx, qbx and qbcore)
 Config.Authorizedjobs = {'police', 'bcso'} -- Add the job names that you want to be able to use gear
 
+Config.RequireUnlocked = false -- Does the vehicle need to be unlocked to equip gear?
+
 Config.BProofAddedArmor = 50 -- How much bulletproof vest should add armor
+Config.HVestAddedArmor = 75 -- How much heavy armor should add armor
 Config.HelmetAddedArmor = 25 -- How much helmet should add armor (Armor caps at 100)
 
+Config.BProofNumber = 4 -- Number of the bulletproof vest   (set to nil if you want to disable)
+Config.BProofTexture = 0 -- Number of the bulletproof vest texture
 
-Config.BProofNumber = 4 -- Number of the bulletproof vest
-Config.BProofTexture = 0 -- Number of the bulletProof vest texture
+Config.HeavyVestNumber = 20 -- Number of the heavy vest    (set to nil if you want to disable)
+Config.HeavyVestTexture = 0 -- Number of the heavy vest texture
 
-Config.RefVestNumber = 21 -- Number of the reflective vest
+Config.RefVestNumber = 21 -- Number of the reflective vest  (set to nil if you want to disable)
 Config.RefVestTexture = 0 -- Number of the reflective vest texture
 
-Config.HelmetNumber = 59 -- number of the helmet
+Config.HelmetNumber = 59 -- number of the helmet            (set to nil if you want to disable)
 Config.HelmetTexture = 0 -- number of the helmet texture
 
 
@@ -33,6 +38,10 @@ Config.Translation = {
     take_armor = "Grab bulletproof vest",
     putting_armor = "Equipping bulletproof vest...",
     took_armor = "You've equipped a bulletproof vest.",
+
+    take_heavy = "Grab heavy vest",
+    putting_heavy = "Equipping heavy vest...",
+    took_heavy = "You've equipped a heavt vest",
     bproof_taken = "You already have a bulletproof vest.",
 
     take_refvest = "Grab reflective vest",

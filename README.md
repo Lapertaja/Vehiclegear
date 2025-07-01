@@ -15,12 +15,14 @@ This script allows players to interact with police vehicle trunks to equip and r
   - Each with animations and progress circles
   - Restrictions for taking gear so players don't spam full armor
   - Removing gear is only possible when gear has been equipped from the trunk
+  - Choose which gear you want enabled
 
 - **Customizable access**
   - Only vehicles listed in `allowedVehicles` can be used
   - The script has the possibility to job lock the gear
     - Only authorized jobs listed in `Authorizedjobs` can utilize gear
     - Also the possibility to disable so that everyone can take gear
+  - Possibility to make it so that the vehicle needs to be unlocked to be able to take gear
 
 - **Gear memory system**
   - Restores original gear when removing the new one
