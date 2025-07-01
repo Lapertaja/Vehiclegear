@@ -2,6 +2,7 @@ local originalVest = nil
 local originalHelmet = nil
 local hasTakenHelmet = false
 local BProofTaken = false
+local HVestTaken = false
 local ESX = nil
 local QBCore = nil
 
@@ -218,6 +219,7 @@ exports.ox_target:addGlobalVehicle({
                 SetPedComponentVariation(cache.ped, 9, Config.HeavyVestNumber, Config.HeavyVestTexture, 1)
                 Notify(Config.Translation.took_heavy, 'inform')
                 BProofTaken = true
+                HVestTaken = true
             end
         end
     },
@@ -308,7 +310,9 @@ exports.ox_target:addGlobalVehicle({
             Wait(100)
 
             if playProgressBar(Config.Translation.removing_vest, data.entity) then
-                if BProofTaken then
+                if HVestTaken then
+                    SetPedArmour(cache.ped, math.max(GetPedArmour(cache.ped) - Config.HVestAddedArmor, 0))
+                elseif BProofTaken then
                     SetPedArmour(cache.ped, math.max(GetPedArmour(cache.ped) - Config.BProofAddedArmor, 0))
                 end
                 SetPedComponentVariation(cache.ped, 9, originalVest.item, originalVest.texture, 1)
