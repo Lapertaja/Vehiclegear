@@ -12,8 +12,7 @@ Config.allowedVehicles = {
 Config.NotifyType = 'ox' -- ox, okok, esx, qb, custom (set in client.lua)
 Config.NotifyDuration = 5 -- seconds
 
-Config.RequireJob = true -- Does the player need to have a certain job to be able to take gear (Only works on esx, qbx and qbcore)
-Config.Authorizedjobs = {'police', 'bcso'} -- Add the job names that you want to be able to use gear
+Config.Authorizedjobs = {'police', 'bcso'} -- Add the job names that you want to be able to use gear (nil or empty table to disable)
 
 Config.RequireUnlocked = false -- Does the vehicle need to be unlocked to equip gear?
 

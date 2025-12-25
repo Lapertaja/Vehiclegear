@@ -4,7 +4,7 @@ lua54 'true'
 
 author 'Lapertaja'
 description 'Take equipment out of a police car trunk'
-version '1.1.2'
+version '1.1.3'
 
 client_script 'client.lua'
 
@@ -15,6 +15,5 @@ shared_scripts {
 
 dependencies {
     'ox_lib',
-    'ox_target',
-    'ox_inventory'
+    'ox_target'
 }

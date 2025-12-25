@@ -3,6 +3,7 @@ local originalHelmet = nil
 local hasTakenHelmet = false
 local BProofTaken = false
 local HVestTaken = false
+local RefVestTaken = false
 local ESX = nil
 local QBCore = nil
 
@@ -55,21 +56,6 @@ end
 
 local function isAllowedVehicle(entity)
     return Config.allowedVehicles[GetEntityModel(entity)] == true
-end
-
-local function isCop()
-    if QBCore then
-        for _,v in pairs(Config.Authorizedjobs) do
-            return QBCore.Functions.GetPlayerData().job.name == v
-        end
-        return false
-    elseif ESX then
-        for _,v in pairs(Config.Authorizedjobs) do
-            return ESX.PlayerData.job.name == v
-        end
-        return false
-    end
-    return false
 end
 
 local function playProgressBar(label, vehicle)
@@ -154,11 +140,9 @@ exports.ox_target:addGlobalVehicle({
         label = Config.Translation.take_armor,
         bones = { 'boot' },
         distance = 1.0,
+        groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            local allowed = isAllowedVehicle(entity) and Config.BProofNumber ~= nil
-            if Config.RequireJob then
-                allowed = allowed and isCop()
-            end
+            local allowed = isAllowedVehicle(entity) and Config.BProofNumber ~= nil and not BProofTaken and not HVestTaken and not RefVestTaken
             if Config.RequireUnlocked then
                 allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
             end
@@ -191,11 +175,9 @@ exports.ox_target:addGlobalVehicle({
         label = Config.Translation.take_heavy,
         bones = { 'boot' },
         distance = 1.0,
+        groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            local allowed = isAllowedVehicle(entity) and Config.HeavyVestNumber ~= nil
-            if Config.RequireJob then
-                allowed = allowed and isCop()
-            end
+            local allowed = isAllowedVehicle(entity) and Config.HeavyVestNumber ~= nil and not BProofTaken and not HVestTaken and not RefVestTaken
             if Config.RequireUnlocked then
                 allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
             end
@@ -218,7 +200,6 @@ exports.ox_target:addGlobalVehicle({
                 SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.HVestAddedArmor, 100))
                 SetPedComponentVariation(cache.ped, 9, Config.HeavyVestNumber, Config.HeavyVestTexture, 1)
                 Notify(Config.Translation.took_heavy, 'inform')
-                BProofTaken = true
                 HVestTaken = true
             end
         end
@@ -229,11 +210,9 @@ exports.ox_target:addGlobalVehicle({
         label = Config.Translation.take_refvest,
         bones = { 'boot' },
         distance = 1.0,
+        groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            local allowed = isAllowedVehicle(entity) and Config.RefVestNumber ~= nil
-            if Config.RequireJob then
-                allowed = allowed and isCop()
-            end
+            local allowed = isAllowedVehicle(entity) and Config.RefVestNumber ~= nil and not BProofTaken and not HVestTaken and not RefVestTaken
             if Config.RequireUnlocked then
                 allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
             end
@@ -251,6 +230,7 @@ exports.ox_target:addGlobalVehicle({
                 saveCurrentVest()
                 SetPedComponentVariation(cache.ped, 9, Config.RefVestNumber, Config.RefVestTexture, 1)
                 Notify(Config.Translation.took_vest, 'inform')
+                RefVestTaken = true
             end
         end
     },
@@ -260,11 +240,9 @@ exports.ox_target:addGlobalVehicle({
         label = Config.Translation.take_helmet,
         bones = { 'boot' },
         distance = 1.0,
+        groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            local allowed = isAllowedVehicle(entity) and Config.HelmetNumber ~= nil
-            if Config.RequireJob then
-                allowed = allowed and isCop()
-            end
+            local allowed = isAllowedVehicle(entity) and Config.HelmetNumber ~= nil and not hasTakenHelmet
             if Config.RequireUnlocked then
                 allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
             end
@@ -319,6 +297,8 @@ exports.ox_target:addGlobalVehicle({
                 Notify(Config.Translation.removed_vest, 'inform')
                 originalVest = nil
                 BProofTaken = false
+                HVestTaken = false
+                RefVestTaken = false
             end
         end
     },
