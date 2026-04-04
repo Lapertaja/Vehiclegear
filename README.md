@@ -1,4 +1,5 @@
 ## Vehiclegear
+
 This script allows players to interact with police vehicle trunks to equip and remove tactical gear using ox_target and ox_inventory. Designed for immersive roleplay and realistic loadout management.
 
 ---
@@ -16,6 +17,7 @@ This script allows players to interact with police vehicle trunks to equip and r
   - Restrictions for taking gear so players don't spam full armor
   - Removing gear is only possible when gear has been equipped from the trunk
   - Choose which gear you want enabled
+  - Gear can be made to be required to be present in the target vehicle trunk
 
 - **Customizable access**
   - Only vehicles listed in `allowedVehicles` can be used
@@ -45,6 +47,6 @@ This script allows players to interact with police vehicle trunks to equip and r
 ---
 
 ## To-do
-- Add item restriction possibility so that the gear has to be in the trunk to equip
+
 - Add vehicle restriction possibility
   - Only certain vehicles can give certain equipment (Bearcat can give heavier gear, bike only helmet etc.)

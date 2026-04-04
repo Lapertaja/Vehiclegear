@@ -4,9 +4,11 @@ lua54 'true'
 
 author 'Lapertaja'
 description 'Take equipment out of a police car trunk'
-version '1.1.3'
+version '1.1.4'
 
 client_script 'client.lua'
+
+server_script 'server.lua'
 
 shared_scripts {
     '@ox_lib/init.lua',

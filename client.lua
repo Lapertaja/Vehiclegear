@@ -5,6 +5,11 @@ local BProofTaken = false
 local HVestTaken = false
 local RefVestTaken = false
 
+local function Notify(desc, type)
+    local duration = Config.NotifyDuration * 1000
+    Config.Notify(Config.Translation.notifyTitle, desc, type, duration)
+end
+
 local function isAllowedVehicle(entity)
     return Config.allowedVehicles[GetEntityModel(entity)] == true
 end
@@ -47,6 +52,7 @@ local function playProgressBar(label, vehicle)
     return success
 end
 
+
 local function saveCurrentVest()
     if not originalVest then
         originalVest = {
@@ -68,20 +74,20 @@ local function saveCurrentHelmet()
     end
 end
 
--- Shared helper: checks vehicle type + unlock state
-local function canInteractTrunk(entity, extraCondition)
-    if not isAllowedVehicle(entity) then return false end
-    if Config.RequireUnlocked and GetVehicleDoorLockStatus(entity) ~= 1 then return false end
-    return extraCondition == nil or extraCondition
-end
+local function isLookingAtVehicle(ped, vehicle, maxAngle)
+    local pedCoords = GetEntityCoords(ped)
+    local vehicleCoords = GetEntityCoords(vehicle)
+    local toVehicle = vector3(vehicleCoords.x - pedCoords.x, vehicleCoords.y - pedCoords.y, vehicleCoords.z - pedCoords
+        .z)
 
--- Shared helper: face vehicle, wait for turn, run progress bar, then callback
-local function doGearAction(data, label, callback)
-    TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
-    Wait(1000)
-    if playProgressBar(label, data.entity) then
-        callback()
-    end
+    local forward = GetEntityForwardVector(ped)
+
+    toVehicle = toVehicle / #(toVehicle)
+
+    local dot = forward.x * toVehicle.x + forward.y * toVehicle.y + forward.z * toVehicle.z
+    local angle = math.deg(math.acos(dot))
+
+    return angle < (maxAngle or 30.0)
 end
 
 exports.ox_target:addGlobalVehicle({
@@ -93,20 +99,47 @@ exports.ox_target:addGlobalVehicle({
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            return canInteractTrunk(entity,
-                Config.BProofNumber ~= nil and not BProofTaken and not HVestTaken and not RefVestTaken)
+            local allowed = isAllowedVehicle(entity) and Config.BProofNumber ~= nil and not BProofTaken and
+                not HVestTaken and not RefVestTaken
+            if Config.RequireUnlocked then
+                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            return allowed
         end,
         onSelect = function(data)
             if BProofTaken then
-                return Config.Notify(Config.Translation.bproof_taken, 'error')
+                return Notify(Config.Translation.bproof_taken, 'error')
             end
-            doGearAction(data, Config.Translation.putting_armor, function()
-                saveCurrentVest()
-                SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.BProofAddedArmor, 100))
-                SetPedComponentVariation(cache.ped, 9, Config.BProofNumber, Config.BProofTexture, 1)
-                Config.Notify(Config.Translation.took_armor, 'inform')
-                BProofTaken = true
-            end)
+            local itemIsInTrunk = true
+
+            local plate = string.gsub(GetVehicleNumberPlateText(data.entity), '^%s*(.-)%s*$', '%1')
+            if Config.RequireItems then
+                itemIsInTrunk = lib.callback.await('vehiclegear:isItemInTrunk', false, plate, Config.BProofItem)
+            end
+
+            if itemIsInTrunk then
+                TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+                while not isLookingAtVehicle(cache.ped, data.entity) do
+                    Wait(50)
+                end
+                Wait(100)
+
+                if playProgressBar(Config.Translation.putting_armor, data.entity) then
+                    saveCurrentVest()
+                    SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.BProofAddedArmor, 100))
+                    SetPedComponentVariation(cache.ped, 9, Config.BProofNumber, Config.BProofTexture, 1)
+
+                    if Config.RequireItems then
+                        TriggerServerEvent('vehiclegear:removeItem', Config.BProofItem, plate)
+                    end
+
+                    Notify(Config.Translation.took_armor, 'inform')
+                    BProofTaken = true
+                end
+            else
+                Notify(Config.Translation.not_in_trunk, 'error')
+            end
         end
     },
     {
@@ -117,20 +150,47 @@ exports.ox_target:addGlobalVehicle({
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            return canInteractTrunk(entity,
-                Config.HeavyVestNumber ~= nil and not BProofTaken and not HVestTaken and not RefVestTaken)
+            local allowed = isAllowedVehicle(entity) and Config.HeavyVestNumber ~= nil and not BProofTaken and
+                not HVestTaken and not RefVestTaken
+            if Config.RequireUnlocked then
+                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            return allowed
         end,
         onSelect = function(data)
             if BProofTaken then
-                return Config.Notify(Config.Translation.bproof_taken, 'error')
+                return Notify(Config.Translation.bproof_taken, 'error')
             end
-            doGearAction(data, Config.Translation.putting_heavy, function()
-                saveCurrentVest()
-                SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.HVestAddedArmor, 100))
-                SetPedComponentVariation(cache.ped, 9, Config.HeavyVestNumber, Config.HeavyVestTexture, 1)
-                Config.Notify(Config.Translation.took_heavy, 'inform')
-                HVestTaken = true
-            end)
+            local itemIsInTrunk = true
+
+            local plate = string.gsub(GetVehicleNumberPlateText(data.entity), '^%s*(.-)%s*$', '%1')
+            if Config.RequireItems then
+                itemIsInTrunk = lib.callback.await('vehiclegear:isItemInTrunk', false, plate, Config.HeavyVestItem)
+            end
+
+            if itemIsInTrunk then
+                TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+                while not isLookingAtVehicle(cache.ped, data.entity) do
+                    Wait(50)
+                end
+                Wait(100)
+
+                if playProgressBar(Config.Translation.putting_heavy, data.entity) then
+                    saveCurrentVest()
+                    SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.HVestAddedArmor, 100))
+                    SetPedComponentVariation(cache.ped, 9, Config.HeavyVestNumber, Config.HeavyVestTexture, 1)
+
+                    if Config.RequireItems then
+                        TriggerServerEvent('vehiclegear:removeItem', Config.HeavyVestItem, plate)
+                    end
+
+                    Notify(Config.Translation.took_heavy, 'inform')
+                    HVestTaken = true
+                end
+            else
+                Notify(Config.Translation.not_in_trunk, 'error')
+            end
         end
     },
     {
@@ -141,16 +201,46 @@ exports.ox_target:addGlobalVehicle({
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            return canInteractTrunk(entity,
-                Config.RefVestNumber ~= nil and not BProofTaken and not HVestTaken and not RefVestTaken)
+            local allowed = isAllowedVehicle(entity) and Config.RefVestNumber ~= nil and not BProofTaken and
+                not HVestTaken and not RefVestTaken
+            if Config.RequireUnlocked then
+                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            return allowed
         end,
         onSelect = function(data)
-            doGearAction(data, Config.Translation.putting_vest, function()
-                saveCurrentVest()
-                SetPedComponentVariation(cache.ped, 9, Config.RefVestNumber, Config.RefVestTexture, 1)
-                Config.Notify(Config.Translation.took_vest, 'inform')
-                RefVestTaken = true
-            end)
+            if RefVestTaken then
+                return Notify(Config.Translation.bproof_taken, 'error')
+            end
+            local itemIsInTrunk = true
+
+            local plate = string.gsub(GetVehicleNumberPlateText(data.entity), '^%s*(.-)%s*$', '%1')
+            if Config.RequireItems then
+                itemIsInTrunk = lib.callback.await('vehiclegear:isItemInTrunk', false, plate, Config.RefVestItem)
+            end
+
+            if itemIsInTrunk then
+                TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+                while not isLookingAtVehicle(cache.ped, data.entity) do
+                    Wait(50)
+                end
+                Wait(100)
+
+                if playProgressBar(Config.Translation.putting_vest, data.entity) then
+                    saveCurrentVest()
+                    SetPedComponentVariation(cache.ped, 9, Config.RefVestNumber, Config.RefVestTexture, 1)
+
+                    if Config.RequireItems then
+                        TriggerServerEvent('vehiclegear:removeItem', Config.RefVestItem, plate)
+                    end
+
+                    Notify(Config.Translation.took_vest, 'inform')
+                    RefVestTaken = true
+                end
+            else
+                Notify(Config.Translation.not_in_trunk, 'error')
+            end
         end
     },
     {
@@ -161,20 +251,47 @@ exports.ox_target:addGlobalVehicle({
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            return canInteractTrunk(entity, Config.HelmetNumber ~= nil and not hasTakenHelmet)
+            local allowed = isAllowedVehicle(entity) and Config.HelmetNumber ~= nil and not hasTakenHelmet
+            if Config.RequireUnlocked then
+                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            return allowed
         end,
         onSelect = function(data)
             if hasTakenHelmet then
-                return Config.Notify(Config.Translation.helmet_taken, 'error')
+                return Notify(Config.Translation.helmet_taken, 'error')
             end
-            doGearAction(data, Config.Translation.putting_helmet, function()
-                saveCurrentHelmet()
-                ClearPedProp(cache.ped, 0)
-                SetPedPropIndex(cache.ped, 0, Config.HelmetNumber, Config.HelmetTexture, true)
-                SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.HelmetAddedArmor, 100))
-                Config.Notify(Config.Translation.took_helmet, 'inform')
-                hasTakenHelmet = true
-            end)
+            local itemIsInTrunk = true
+
+            local plate = string.gsub(GetVehicleNumberPlateText(data.entity), '^%s*(.-)%s*$', '%1')
+            if Config.RequireItems then
+                itemIsInTrunk = lib.callback.await('vehiclegear:isItemInTrunk', false, plate, Config.HelmetItem)
+            end
+
+            if itemIsInTrunk then
+                TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+                while not isLookingAtVehicle(cache.ped, data.entity) do
+                    Wait(50)
+                end
+                Wait(100)
+
+                if playProgressBar(Config.Translation.putting_helmet, data.entity) then
+                    saveCurrentHelmet()
+                    ClearPedProp(cache.ped, 0)
+                    SetPedPropIndex(cache.ped, 0, Config.HelmetNumber, Config.HelmetTexture, true)
+                    SetPedArmour(cache.ped, math.min(GetPedArmour(cache.ped) + Config.HelmetAddedArmor, 100))
+
+                    if Config.RequireItems then
+                        TriggerServerEvent('vehiclegear:removeItem', Config.HelmetItem, plate)
+                    end
+
+                    Notify(Config.Translation.took_helmet, 'inform')
+                    hasTakenHelmet = true
+                end
+            else
+                Notify(Config.Translation.not_in_trunk, 'error')
+            end
         end
     },
     {
@@ -187,19 +304,43 @@ exports.ox_target:addGlobalVehicle({
             return isAllowedVehicle(entity) and originalVest ~= nil
         end,
         onSelect = function(data)
-            doGearAction(data, Config.Translation.removing_vest, function()
+            local plate = string.gsub(GetVehicleNumberPlateText(data.entity), '^%s*(.-)%s*$', '%1')
+            TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+            while not isLookingAtVehicle(cache.ped, data.entity) do
+                Wait(50)
+            end
+            Wait(100)
+
+            if playProgressBar(Config.Translation.removing_vest, data.entity) then
                 if HVestTaken then
                     SetPedArmour(cache.ped, math.max(GetPedArmour(cache.ped) - Config.HVestAddedArmor, 0))
+
+                    if Config.RequireItems then
+                        TriggerServerEvent('vehiclegear:addItem', Config.HeavyVestItem, plate)
+                    end
                 elseif BProofTaken then
                     SetPedArmour(cache.ped, math.max(GetPedArmour(cache.ped) - Config.BProofAddedArmor, 0))
+
+                    if Config.RequireItems then
+                        TriggerServerEvent('vehiclegear:addItem', Config.BProofItem, plate)
+                    end
+                elseif RefVestTaken then
+                    if Config.RequireItems then
+                        TriggerServerEvent('vehiclegear:addItem', Config.RefVestItem, plate)
+                    end
                 end
-                SetPedComponentVariation(cache.ped, 9, originalVest.item, originalVest.texture, 1)
-                Config.Notify(Config.Translation.removed_vest, 'inform')
+
+                if originalVest then
+                    SetPedComponentVariation(cache.ped, 9, originalVest.item, originalVest.texture, 1)
+                end
+
+                Notify(Config.Translation.removed_vest, 'inform')
                 originalVest = nil
                 BProofTaken = false
                 HVestTaken = false
                 RefVestTaken = false
-            end)
+            end
         end
     },
     {
@@ -212,16 +353,30 @@ exports.ox_target:addGlobalVehicle({
             return isAllowedVehicle(entity) and hasTakenHelmet
         end,
         onSelect = function(data)
-            doGearAction(data, Config.Translation.removing_helmet, function()
+            local plate = string.gsub(GetVehicleNumberPlateText(data.entity), '^%s*(.-)%s*$', '%1')
+            TaskTurnPedToFaceEntity(cache.ped, data.entity, 1000)
+
+            while not isLookingAtVehicle(cache.ped, data.entity) do
+                Wait(50)
+            end
+            Wait(100)
+
+            if playProgressBar(Config.Translation.removing_helmet, data.entity) then
                 SetPedArmour(cache.ped, math.max(GetPedArmour(cache.ped) - Config.HelmetAddedArmor, 0))
                 ClearPedProp(cache.ped, 0)
+
                 if originalHelmet then
                     SetPedPropIndex(cache.ped, 0, originalHelmet.prop, originalHelmet.texture, true)
                     originalHelmet = nil
                 end
-                Config.Notify(Config.Translation.removed_helmet, 'inform')
+
+                if Config.RequireItems then
+                    TriggerServerEvent('vehiclegear:addItem', Config.HelmetItem, plate)
+                end
+
+                Notify(Config.Translation.removed_helmet, 'inform')
                 hasTakenHelmet = false
-            end)
+            end
         end
     }
 })
