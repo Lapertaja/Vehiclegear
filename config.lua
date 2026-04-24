@@ -1,12 +1,18 @@
 Config = {}
 
 Config.allowedVehicles = {
-    [`police`] = true,
-    [`police2`] = true,
-    [`fbi`] = true,
-    [`fbi2`] = true,
-    [`sheriff`] = true,
-    [`sheriff2`] = true
+    {
+        name = 'police',
+        gear = { 'bproof', 'refvest', 'helmet' }
+    },
+    {
+        name = 'polb',
+        gear = { 'refvest', 'helmet' }
+    },
+    {
+        name = 'bearcat',
+        gear = { 'bproof', 'heavy', 'refvest', 'helmet' }
+    }
 }
 
 Config.NotifyDuration = 5 -- seconds
@@ -20,10 +26,17 @@ Config.Notify = function(title, desc, type, duration)
     })
 end
 
+Config.Sound = {
+    Enable = true,
+    Name = "PURCHASE",
+    Set = "HUD_AMMUNATION_SOUNDSET"
+}
+
 Config.Authorizedjobs = { 'police', 'bcso' } -- Add the job names that you want to be able to use gear (nil or empty table to disable)
 
 Config.RequireUnlocked = false               -- Does the vehicle need to be unlocked to equip gear?
 Config.RequireItems = true                   -- Do the items need to be in the trunk to be equipped
+Config.VehicleRestricted = true              -- Restrict gear to certain vehicles
 
 Config.BProofAddedArmor = 50                 -- How much bulletproof vest should add armor
 Config.HVestAddedArmor = 75                  -- How much heavy armor should add armor

@@ -10,10 +10,27 @@ local function Notify(desc, type)
     Config.Notify(Config.Translation.notifyTitle, desc, type, duration)
 end
 
+---@return boolean isAllowedVehicle
 local function isAllowedVehicle(entity)
-    return Config.allowedVehicles[GetEntityModel(entity)] == true
+    for _, v in pairs(Config.allowedVehicles) do
+        return v.name == GetEntityModel(entity)
+    end
+    return false
 end
 
+---@return boolean canGetFromVehicle
+local function vehicleRestriction(gear)
+    if not Config.VehicleRestricted then return true end
+
+    for _, v in ipairs(Config.allowedVehicles) do
+        for _, i in pairs(v.gear) do
+            return i == gear
+        end
+    end
+    return false
+end
+
+---@return boolean progressbarPlayed
 local function playProgressBar(label, vehicle)
     local door = 5
     local doorAlreadyOpen = false
@@ -49,6 +66,10 @@ local function playProgressBar(label, vehicle)
         SetVehicleDoorShut(vehicle, door, false)
     end
 
+    if success and Config.Sound.Enable then
+        PlaySoundFrontend(-1, Config.Sound.Name, Config.Sound.Set, true)
+    end
+
     return success
 end
 
@@ -74,6 +95,7 @@ local function saveCurrentHelmet()
     end
 end
 
+---@return boolean isLookingAtVehicle
 local function isLookingAtVehicle(ped, vehicle, maxAngle)
     local pedCoords = GetEntityCoords(ped)
     local vehicleCoords = GetEntityCoords(vehicle)
@@ -95,7 +117,7 @@ exports.ox_target:addGlobalVehicle({
         name = 'trunk_take_armor',
         icon = 'fa-solid fa-shield-halved',
         label = Config.Translation.take_armor,
-        bones = { 'boot' },
+        bones = { 'boot', 'trunk' },
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
@@ -103,6 +125,9 @@ exports.ox_target:addGlobalVehicle({
                 not HVestTaken and not RefVestTaken
             if Config.RequireUnlocked then
                 allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            if Config.VehicleRestricted then
+                allowed = allowed and vehicleRestriction('bproof')
             end
             return allowed
         end,
@@ -146,7 +171,7 @@ exports.ox_target:addGlobalVehicle({
         name = 'trunk_take_heavy_armor',
         icon = 'fa-solid fa-shield-halved',
         label = Config.Translation.take_heavy,
-        bones = { 'boot' },
+        bones = { 'boot', 'trunk' },
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
@@ -154,6 +179,9 @@ exports.ox_target:addGlobalVehicle({
                 not HVestTaken and not RefVestTaken
             if Config.RequireUnlocked then
                 allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            if Config.VehicleRestricted then
+                allowed = allowed and vehicleRestriction('heavy')
             end
             return allowed
         end,
@@ -197,7 +225,7 @@ exports.ox_target:addGlobalVehicle({
         name = 'trunk_take_vest',
         icon = 'fa-solid fa-vest',
         label = Config.Translation.take_refvest,
-        bones = { 'boot' },
+        bones = { 'boot', 'trunk' },
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
@@ -205,6 +233,9 @@ exports.ox_target:addGlobalVehicle({
                 not HVestTaken and not RefVestTaken
             if Config.RequireUnlocked then
                 allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            if Config.VehicleRestricted then
+                allowed = allowed and vehicleRestriction('refvest')
             end
             return allowed
         end,
@@ -247,13 +278,16 @@ exports.ox_target:addGlobalVehicle({
         name = 'trunk_take_helmet',
         icon = 'fa-solid fa-hard-hat',
         label = Config.Translation.take_helmet,
-        bones = { 'boot' },
+        bones = { 'boot', 'trunk' },
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
             local allowed = isAllowedVehicle(entity) and Config.HelmetNumber ~= nil and not hasTakenHelmet
             if Config.RequireUnlocked then
                 allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
+            end
+            if Config.VehicleRestricted then
+                allowed = allowed and vehicleRestriction('helmet')
             end
             return allowed
         end,
@@ -298,7 +332,7 @@ exports.ox_target:addGlobalVehicle({
         name = 'trunk_remove_armor',
         icon = 'fa-solid fa-vest',
         label = Config.Translation.remove_vest,
-        bones = { 'boot' },
+        bones = { 'boot', 'trunk' },
         distance = 1.0,
         canInteract = function(entity)
             return isAllowedVehicle(entity) and originalVest ~= nil
@@ -347,7 +381,7 @@ exports.ox_target:addGlobalVehicle({
         name = 'trunk_remove_helmet',
         icon = 'fa-solid fa-hard-hat',
         label = Config.Translation.remove_helmet,
-        bones = { 'boot' },
+        bones = { 'boot', 'trunk' },
         distance = 1.0,
         canInteract = function(entity)
             return isAllowedVehicle(entity) and hasTakenHelmet
