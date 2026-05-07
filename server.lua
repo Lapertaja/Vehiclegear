@@ -10,6 +10,9 @@ end
 lib.callback.register('vehiclegear:isItemInTrunk', function(source, plate, itemName)
     if not itemName or itemName == '' then return true end
 
+    -- Make sure that the itemName is a string
+    if not type(itemName) == 'string' then return false end
+
     getTrunk(plate)
     if not trunk then return false end
 

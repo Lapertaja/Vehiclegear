@@ -21,6 +21,7 @@ This script allows players to interact with police vehicle trunks to equip and r
 
 - **Customizable access**
   - Only vehicles listed in `allowedVehicles` can be used
+    - Each vehicle can be assigned certain gear
   - The script has the possibility to job lock the gear
     - Only authorized jobs listed in `Authorizedjobs` can utilize gear
     - Also the possibility to disable so that everyone can take gear
@@ -47,6 +48,3 @@ This script allows players to interact with police vehicle trunks to equip and r
 ---
 
 ## To-do
-
-- Add vehicle restriction possibility
-  - Only certain vehicles can give certain equipment (Bearcat can give heavier gear, bike only helmet etc.)

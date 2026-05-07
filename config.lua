@@ -6,7 +6,7 @@ Config.allowedVehicles = {
         gear = { 'bproof', 'refvest', 'helmet' }
     },
     {
-        name = 'polb',
+        name = 'policeb',
         gear = { 'refvest', 'helmet' }
     },
     {
@@ -27,9 +27,9 @@ Config.Notify = function(title, desc, type, duration)
 end
 
 Config.Sound = {
-    Enable = true,
-    Name = "PURCHASE",
-    Set = "HUD_AMMUNATION_SOUNDSET"
+    Enable = false,
+    Name = "CHALLENGE_UNLOCKED",
+    Set = "HUD_AWARDS"
 }
 
 Config.Authorizedjobs = { 'police', 'bcso' } -- Add the job names that you want to be able to use gear (nil or empty table to disable)
