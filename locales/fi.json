@@ -1,0 +1,30 @@
+{
+    "take_armor": "Ota luotiliivi",
+    "putting_armor": "Puet luotiliiviä...",
+    "took_armor": "Puit luotiliivin.",
+    "take_heavy": "Ota raskas luotiliivi",
+    "putting_heavy": "Puet raskasta luotiliiviä...",
+    "took_heavy": "Puit raskaan luotiliivin.",
+    "bproof_taken": "Sinulla on jo luotiliivi.",
+
+    "take_refvest": "Ota huomiliivi",
+    "putting_vest": "Puet huomiliiviä...",
+    "took_vest": "Puit huomiliivin.",
+
+    "take_helmet": "Ota kypärä",
+    "putting_helmet": "Puet kypärää...",
+    "took_helmet": "Puit kypärän.",
+    "helmet_taken": "Sinulla on jo kypärä.",
+
+    "remove_vest": "Riisu liivi",
+    "removing_vest": "Riisut liiviä...",
+    "removed_vest": "Riisuit liivin.",
+    
+    "remove_helmet": "Riisu kypärä",
+    "removing_helmet": "Riisut kypärää...",
+    "removed_helmet": "Riisuit kypärän.",
+
+    "not_in_trunk": "Esine ei ole ajoneuvon säilytystilassa",
+
+    "notifyTitle": "Varustejärjestelmä"
+}
