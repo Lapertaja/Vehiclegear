@@ -25,33 +25,34 @@ end
 
 ---@return string plate
 local function getPlate(entity)
-    if not entity or not DoesEntityExist(entity) then return '' end
+    if not entity then return '' end
     local props = lib.getVehicleProperties(entity)
     local plate = props and props.plate or GetVehicleNumberPlateText(entity)
     return plate and string.trim(plate) or ''
 end
 
----@return boolean isAllowedVehicle
-local function isAllowedVehicle(entity)
-    if not entity or not DoesEntityExist(entity) then return false end
-    return allowedHashes[GetEntityModel(entity)] ~= nil
-end
-
----@return boolean canGetFromVehicle
-local function vehicleRestriction(gear, entity)
-    if not Config.VehicleRestricted then return true end
-    if not entity or not DoesEntityExist(entity) then return false end
-
-    local v = allowedHashes[GetEntityModel(entity)]
+---@return boolean canTakeGear
+local function canTakeGear(entity, gear)
+    local model = GetEntityModel(entity)
+    local v = allowedHashes[model]
     if not v then return false end
-    if not v.gear then return true end
 
-    for _, i in ipairs(v.gear) do
-        if i == gear then
-            return true
+    if Config.VehicleRestricted and v.gear then
+        local hasGear = false
+        for i = 1, #v.gear do
+            if v.gear[i] == gear then
+                hasGear = true
+                break
+            end
         end
+        if not hasGear then return false end
     end
-    return false
+
+    if Config.RequireUnlocked and GetVehicleDoorLockStatus(entity) ~= 1 then
+        return false
+    end
+
+    return true
 end
 
 ---@return boolean progressbarPlayed
@@ -60,7 +61,7 @@ local function playProgressBar(label, vehicle)
     local doorAlreadyOpen = false
     local hasDoor = false
 
-    if vehicle and DoesEntityExist(vehicle) then
+    if vehicle then
         local doorAngle = GetVehicleDoorAngleRatio(vehicle, door)
         if doorAngle then
             hasDoor = true
@@ -155,15 +156,8 @@ exports.ox_target:addGlobalVehicle({
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            local allowed = isAllowedVehicle(entity) and Config.BProofNumber ~= nil and not BProofTaken and
-                not HVestTaken and not RefVestTaken
-            if Config.RequireUnlocked then
-                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
-            end
-            if Config.VehicleRestricted then
-                allowed = allowed and vehicleRestriction('bproof', entity)
-            end
-            return allowed
+            if Config.BProofNumber == nil or BProofTaken or HVestTaken or RefVestTaken then return false end
+            return canTakeGear(entity, 'bproof')
         end,
         onSelect = function(data)
             if BProofTaken then
@@ -204,15 +198,8 @@ exports.ox_target:addGlobalVehicle({
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            local allowed = isAllowedVehicle(entity) and Config.HeavyVestNumber ~= nil and not BProofTaken and
-                not HVestTaken and not RefVestTaken
-            if Config.RequireUnlocked then
-                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
-            end
-            if Config.VehicleRestricted then
-                allowed = allowed and vehicleRestriction('heavy', entity)
-            end
-            return allowed
+            if Config.HeavyVestNumber == nil or BProofTaken or HVestTaken or RefVestTaken then return false end
+            return canTakeGear(entity, 'heavy')
         end,
         onSelect = function(data)
             if BProofTaken then
@@ -253,15 +240,8 @@ exports.ox_target:addGlobalVehicle({
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            local allowed = isAllowedVehicle(entity) and Config.RefVestNumber ~= nil and not BProofTaken and
-                not HVestTaken and not RefVestTaken
-            if Config.RequireUnlocked then
-                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
-            end
-            if Config.VehicleRestricted then
-                allowed = allowed and vehicleRestriction('refvest', entity)
-            end
-            return allowed
+            if Config.RefVestNumber == nil or BProofTaken or HVestTaken or RefVestTaken then return false end
+            return canTakeGear(entity, 'refvest')
         end,
         onSelect = function(data)
             if RefVestTaken then
@@ -301,14 +281,8 @@ exports.ox_target:addGlobalVehicle({
         distance = 1.0,
         groups = Config.Authorizedjobs,
         canInteract = function(entity)
-            local allowed = isAllowedVehicle(entity) and Config.HelmetNumber ~= nil and not hasTakenHelmet
-            if Config.RequireUnlocked then
-                allowed = allowed and GetVehicleDoorLockStatus(entity) == 1
-            end
-            if Config.VehicleRestricted then
-                allowed = allowed and vehicleRestriction('helmet', entity)
-            end
-            return allowed
+            if Config.HelmetNumber == nil or hasTakenHelmet then return false end
+            return canTakeGear(entity, 'helmet')
         end,
         onSelect = function(data)
             if hasTakenHelmet then
@@ -349,7 +323,8 @@ exports.ox_target:addGlobalVehicle({
         bones = bones,
         distance = 1.0,
         canInteract = function(entity)
-            return isAllowedVehicle(entity) and originalVest ~= nil
+            if not originalVest then return false end
+            return allowedHashes[GetEntityModel(entity)] ~= nil
         end,
         onSelect = function(data)
             local plate = getPlate(data.entity)
@@ -393,7 +368,8 @@ exports.ox_target:addGlobalVehicle({
         bones = bones,
         distance = 1.0,
         canInteract = function(entity)
-            return isAllowedVehicle(entity) and hasTakenHelmet
+            if not hasTakenHelmet then return false end
+            return allowedHashes[GetEntityModel(entity)] ~= nil
         end,
         onSelect = function(data)
             local plate = getPlate(data.entity)
@@ -418,4 +394,5 @@ exports.ox_target:addGlobalVehicle({
         end
     }
 })
+
 
